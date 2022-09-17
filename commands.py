@@ -1,5 +1,7 @@
 # pip install click
 import click
+
+from models.absent import OAAbsentType
 from models.user import OAUser, OADepartment, OACrossDepartmentAssociation
 from exts import db
 # pip install faker
@@ -161,3 +163,12 @@ def create_association():
     db.session.add_all([a1,a2,a3,a4,a5])
     db.session.commit()
     click.echo("跨部门管理关联成功！")
+
+def create_absent_type():
+    absent_types = ["事假","病假","工伤假","婚假","丧假","产假","探亲假","公假","年休假"]
+    for absent_type in absent_types:
+        absent_type = OAAbsentType(name=absent_type)
+        db.session.add(absent_type)
+    db.session.commit()
+    click.echo("恭喜！请假类型添加成功！")
+

@@ -6,7 +6,7 @@ from utils import restful
 
 def jwt_before_request():
     # 前后端分离项目中，发送真正请求之前，会先发送一个option请求，用来验证这个API是否可用
-    if request.method == 'OPTION':
+    if request.method == 'OPTIONS':
         return
 
     # http://127.0.0.1::5000：域名
