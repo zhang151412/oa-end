@@ -45,15 +45,17 @@ def apply_absent():
         requestor = current_user
 
         # 审核的用户
-        # 1. 如果不是部门的leader，那么responsor就是所在部门的leader
-        # 2. 如果是部门的leader，就要跨部门寻找responsor
+        # 1. 如果不是部门的leader，那么responser就是所在部门的leader
+        # 2. 如果是部门的leader，就要跨部门寻找responser
         # 3. 如果是董事会的leader，直接通过
-        responsor = None
+        responser = None
         if not current_user.is_leader:
             # 1. filter：需要使用模型.字段来查找，查找功能更加强大（比如多个条件的时候）
             # 2. filter_by：直接使用字段，一般都是用来查找与某个字段相等的
-            # 这里是要找responsor，是OAUser对象，所以要从OAUser中去查找
-            responsor = OAUser.query.filter(and_(
+            # 这里是要找responser，是OAUser对象，所以要从OAUser中去查找
+            # OAUser.query.filter：返回的是一个BaseQuery对象
+            # 如果想要获取OAUser对象，则要调用first()方法
+            responser = OAUser.query.filter(and_(
                 OAUser.department_id==current_user.department_id,
                 OAUser.is_leader==True
             )).first()
@@ -61,13 +63,15 @@ def apply_absent():
             association = OACrossDepartmentAssociation.query.filter_by(department_id=current_user.department_id).first()
             # 如果我是董事会的leader，那么在Association表中就没有数据，所以这里要做一层判断
             if association:
-                responsor = association.manager
+                responser = association.manager
+            else:
+                responser = current_user
 
         # 请假的状态，默认情况下是等待审核
         status = OAAbsentStatusEnum.AUDITING
-        # 如果 responsor = None，说明是董事会的leader
+        # 如果responser=None，说明是董事会的leader
         # 直接将status=Pass
-        if not responsor:
+        if responser == current_user:
             status = OAAbsentStatusEnum.PASS
 
         apply_model = OAAbsentApply(
@@ -75,10 +79,10 @@ def apply_absent():
             request_content=request_content,
             start_time=start_time,
             end_time=end_time,
-            requestor=requestor,
             status=status,
-            responser=responsor,
-            absent_type_id=absent_type
+            absent_type_id=absent_type,
+            requestor_id = requestor.id,
+            responser=responser,
         )
         db.session.add(apply_model)
         db.session.commit()
@@ -87,3 +91,12 @@ def apply_absent():
         print(form.errors)
         return restful.params_error(message="参数错误！")
 
+
+# 个人请假列表
+@bp.get("/my")
+def my_absent():
+    absents = OAAbsentApply.query.all()
+    absent_dicts = [item.to_dict() for item in absents]
+    return restful.ok({
+        "absents": absent_dicts
+    })
