@@ -2,7 +2,7 @@ from flask import Blueprint, request, g
 from models.absent import OAAbsentType, OAAbsentApply, OAAbsentStatusEnum
 from models.user import OADepartment, OACrossDepartmentAssociation, OAUser
 from utils import restful
-from .forms import ApplyAbsentForm
+from .forms import ApplyAbsentForm, HandleSubAbsentForm
 from datetime import datetime
 from sqlalchemy import and_
 from exts import db
@@ -95,8 +95,48 @@ def apply_absent():
 # 个人请假列表
 @bp.get("/my")
 def my_absent():
-    absents = OAAbsentApply.query.all()
+    current_user = g.user
+    absents = OAAbsentApply.query.filter_by(requestor_id=current_user.id).order_by(OAAbsentApply.create_time.desc()).all()
     absent_dicts = [item.to_dict() for item in absents]
     return restful.ok({
         "absents": absent_dicts
     })
+
+
+# 下属的请假列表
+@bp.get("/sub")
+def sub_absent():
+    current_user = g.user
+    absents = OAAbsentApply.query.filter_by(responser_id=current_user.id).order_by(OAAbsentApply.create_time.desc()).all()
+    absent_dicts = [item.to_dict() for item in absents]
+    return restful.ok({
+        "absents": absent_dicts
+    })
+
+
+
+@bp.post("/sub/handle")
+def handle_sub_absent():
+    form = HandleSubAbsentForm(request.form)
+    if form.validate():
+        absent_id = form.absent_id.data
+        option = form.option.data
+        response_content = form.response_content.data
+
+        absent_model = OAAbsentApply.query.filter(and_(
+            OAAbsentApply.id==absent_id,
+            OAAbsentApply.responser_id==g.user.id
+        )).first()
+
+        absent_model.status = OAAbsentStatusEnum.PASS if option==1 else OAAbsentStatusEnum.REJECT
+        absent_model.response_content = response_content
+
+        db.session.commit()
+        return restful.ok(data={
+            'absent': absent_model.to_dict()
+        })
+    else:
+        # {"option": ['请传入请假id！'], 'response_content': ['请传入处理理由！']}
+        print(form.errors)
+        return restful.params_error(message='参数上传失败！')
+

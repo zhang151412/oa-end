@@ -12,7 +12,7 @@ class OAUser(db.Model, SerializerMixin):
     __tablename__ = "oa_user"
 
     # 告诉OAUser模型，需要序列化哪些字段
-    serialize_only = ("id", "jobnumber", "realname", "email", "join_time", "is_active", "is_leader")
+    serialize_only = ("id", "jobnumber", "realname", "email", "join_time", "is_active", "is_leader", "department")
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     jobnumber = db.Column(db.String(100), unique=True, nullable=False)

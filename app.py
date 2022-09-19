@@ -5,6 +5,8 @@ from exts import db
 from flask_migrate import Migrate
 from blueprints.user.views import bp as user_bp
 from blueprints.absent.views import bp as absent_bp
+from blueprints.staff.views import bp as staff_bp
+from blueprints.home.views import bp as home_bp
 from flask_cors import CORS
 import commands
 from flask_jwt_extended import JWTManager, jwt_required
@@ -36,6 +38,8 @@ JWTManager(app)
 # 注册蓝图
 app.register_blueprint(user_bp)
 app.register_blueprint(absent_bp)
+app.register_blueprint(staff_bp)
+app.register_blueprint(home_bp)
 
 # 注册命令
 app.cli.command("greet")(commands.greet)
