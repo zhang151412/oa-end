@@ -114,7 +114,6 @@ def sub_absent():
     })
 
 
-
 @bp.post("/sub/handle")
 def handle_sub_absent():
     form = HandleSubAbsentForm(request.form)

@@ -3,6 +3,7 @@ from flask import request
 
 from models.absent import OAAbsentApply
 from models.user import OAUser, OADepartment
+from models.finance import OAFinanceApply
 from utils import restful
 from exts import db
 # func中包含了数据库的聚合函数
@@ -40,4 +41,17 @@ def latest_absent():
         absent_dicts.append(item)
     return restful.ok(data={
         "absents": absent_dicts
+    })
+
+
+@bp.get("/latest/finance")
+def latest_finance():
+    finances = OAFinanceApply.query.order_by(OAFinanceApply.create_time.desc()).limit(5).all()
+    finance_dicts = []
+    for finance in finances:
+        item = finance.to_dict()
+        item['department'] = finance.requestor.department.to_dict()
+        finance_dicts.append(item)
+    return  restful.ok(data={
+        "finances": finance_dicts
     })
